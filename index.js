@@ -7,6 +7,8 @@ const User = require("./models/user");
 const Blog = require("./models/blog");
 const secret_key = "somesecretkey";
 const { verify_token } = require("./middleware");
+const fs = require("fs");
+const path = require("path");
 
 mongoose.connect("mongodb://127.0.0.1:27017/blogs")
     .then(() => {
@@ -113,6 +115,12 @@ app.post("/blog/create", verify_token, async (req, res) => {
         req.user.blogs.push(blog);
         await blog.save();
 
+        //generating unique file name
+        const filename = `${blog._id}.docx`;
+
+        const filePath = path.join(__dirname, 'blogs', filename);
+        fs.writeFileSync(filePath, req.body.blog);
+
         res.status(200).json({ message: "Created blog successfully", blog: blog });
     } catch (err) {
         console.log("Error creating blog: ", err);
@@ -146,6 +154,10 @@ app.delete("/blog/:id", verify_token, async (req, res) => {
         await User.findByIdAndUpdate(user_id, { $pull: { blogs: id } });
         await Blog.findByIdAndDelete(id);
 
+        //deleting the corresponding .docx file
+        const filePath = path.join(__dirname, "blogs", `${id}.docx`);
+        fs.unlinkSync(filePath);
+
         res.status(200).json({ message: "Deleted successfully." });
     } catch (err) {
         console.log("Unable to delete: ", err);
@@ -165,6 +177,12 @@ app.put("/blog/:id", async (req, res) => {
         if (!blog) {
             return res.status(500).json({ message: "Blog not found." });
         }
+
+        // Update the contents of the corresponding .docx file
+        const filePath = path.join(__dirname, "blogs", `${id}.docx`);
+        const content = ` ${blog.blog}`;
+
+        fs.writeFileSync(filePath, content);
 
         res.status(200).json({ message: "Updated successfully", blog });
     } catch (err) {
