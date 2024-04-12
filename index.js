@@ -135,6 +135,24 @@ app.get("/blog/read", verify_token, async (req, res) => {
     }
 });
 
+//@desc delete your blog
+//@auth required
+//@route DELETE /blog/:id
+app.delete("/blog/:id", verify_token, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const user_id = req.user._id;
+
+        await User.findByIdAndUpdate(user_id, { $pull: { blogs: id } });
+        await Blog.findByIdAndDelete(id);
+
+        res.status(200).json({ message: "Deleted successfully." });
+    } catch (err) {
+        console.log("Unable to delete: ", err);
+        res.status(500).json({ message: "Internal server error." });
+    }
+});
+
 app.listen(3000, () => {
     console.log("Listening on Port 3000!");
 });
