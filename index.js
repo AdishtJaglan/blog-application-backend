@@ -18,8 +18,8 @@ app.use(express.json());
 
 //@desc register a user
 //@auth not required
-//@route GET /auth/register
-app.get("/auth/register", async (req, res) => {
+//@route POST /auth/register
+app.post("/auth/register", async (req, res) => {
     const { name, email, password } = req.body;
 
     //checking if all fields are present
