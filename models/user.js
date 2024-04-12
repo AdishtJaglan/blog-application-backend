@@ -17,11 +17,13 @@ const UserSchema = new Schema({
         required: true,
         unique: true,
     },
-    blogs: {
-        type: Schema.Types.ObjectId,
-        ref: "Blog",
-        required: false,
-    }
+    blogs: [
+        {
+            type: Schema.Types.ObjectId,
+            ref: "Blog",
+            required: false,
+        }
+    ]
 });
 
 module.exports = mongoose.model("User", UserSchema);

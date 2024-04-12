@@ -5,6 +5,7 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const User = require("./models/user");
 const Blog = require("./models/blog");
+const secret_key = "somesecretkey";
 
 mongoose.connect("mongodb://127.0.0.1:27017/blogs")
     .then(() => {
@@ -28,19 +29,19 @@ app.post("/auth/register", async (req, res) => {
         throw new Error("All fields mandatory.");
     }
 
-    const checkUser = await User.findOne({ email });
+    const check_user = await User.findOne({ email });
 
     //checking if user is already registered
-    if (checkUser) {
+    if (check_user) {
         res.status(400);
         throw new Error("User already exists.");
     }
 
-    const hashedPassword = await bcrypt.hash(password, 12);
+    const hashed_password = await bcrypt.hash(password, 12);
     const user = new User({
         name,
         email,
-        password: hashedPassword,
+        password: hashed_password,
     });
 
     await user.save();
@@ -48,10 +49,55 @@ app.post("/auth/register", async (req, res) => {
     console.log("Created user: ", user);
 
     if (user) {
-        res.status(200).json({ message: "User registered successfully." });
+        return res.status(200).json({ message: "User registered successfully." });
     } else {
-        res.status(400).json({ message: "User not created." });
+        return res.status(400).json({ message: "User not created." });
     }
+});
+
+//@desc login a user
+//@auth not required
+//@route POST /auth/login
+app.post("/auth/login", async (req, res) => {
+    const { email, password } = req.body;
+
+    const user = await User.findOne({ email });
+
+    //checking if user exists
+    if (!user) {
+        return res.status(403).json({ message: "User does not exist." });
+    }
+
+    const compare_password = await bcrypt.compare(password, user.password);
+
+    //comparing passwords
+    if (!compare_password) {
+        return res.status(403).json({ message: "Invalid credentials." });
+    }
+
+    //issuing access token
+    const access_token = jwt.sign({
+        name: user.name,
+        email: user.email,
+        id: user.id,
+        blogs: user.blogs || [],
+    },
+        secret_key,
+        { expiresIn: "15m" }
+    );
+
+    //issuing refresh token
+    const refresh_token = jwt.sign({
+        name: user.name,
+        email: user.email,
+        id: user.id,
+        blogs: user.blogs || [],
+    },
+        secret_key,
+        { expiresIn: "7d" }
+    );
+
+    res.json({ access: access_token, refresh: refresh_token })
 });
 
 app.listen(3000, () => {
