@@ -6,6 +6,7 @@ const bcrypt = require("bcrypt");
 const User = require("./models/user");
 const Blog = require("./models/blog");
 const secret_key = "somesecretkey";
+const { verify_token } = require("./middleware");
 
 mongoose.connect("mongodb://127.0.0.1:27017/blogs")
     .then(() => {
@@ -98,6 +99,25 @@ app.post("/auth/login", async (req, res) => {
     );
 
     res.json({ access: access_token, refresh: refresh_token })
+});
+
+//@desc create a blog 
+//@auth required
+//@route POST /blog/create
+app.post("/blog/create", verify_token, async (req, res) => {
+    try {
+        const blog = new Blog(req.body);
+        blog.poster = req.user.id; //associating blog with user
+
+        //pushing poem to associated user
+        req.user.blogs.push(blog);
+        await blog.save();
+
+        res.status(200).json({ message: "Created blog successfully", blog: blog });
+    } catch (err) {
+        console.log("Error creating blog: ", err);
+        res.status(500).json({ message: "Error creating blog." });
+    }
 });
 
 app.listen(3000, () => {
