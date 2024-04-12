@@ -153,6 +153,26 @@ app.delete("/blog/:id", verify_token, async (req, res) => {
     }
 });
 
+//@desc update your blog
+//@auth required
+//@route PUT /blog/:id
+app.put("/blog/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updated_body = req.body;
+        const blog = await Blog.findByIdAndUpdate(id, updated_body, { new: true });
+
+        if (!blog) {
+            return res.status(500).json({ message: "Blog not found." });
+        }
+
+        res.status(200).json({ message: "Updated successfully", blog });
+    } catch (err) {
+        console.log("Error updating blog.", err);
+        res.status(500).json({ message: "Internal server error," });
+    }
+});
+
 app.listen(3000, () => {
     console.log("Listening on Port 3000!");
 });
