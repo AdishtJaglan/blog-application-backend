@@ -120,6 +120,21 @@ app.post("/blog/create", verify_token, async (req, res) => {
     }
 });
 
+//@desc read your blogs
+//@auth required
+//@route GET /blog/read
+app.get("/blog/read", verify_token, async (req, res) => {
+    try {
+        const blogs = await Blog.find({ user: req.user._id });
+        console.log(blogs);
+
+        res.json({ blogs: blogs, author: req.user._id });
+    } catch (err) {
+        console.log("Error retrieving blogs: ", err);
+        res.status(500).json({ message: "Internal server error." });
+    }
+});
+
 app.listen(3000, () => {
     console.log("Listening on Port 3000!");
 });
